@@ -1,36 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { Message } from './entities/message.entity';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Message, MessageDocument } from './models/message.model';
 
 @Injectable()
 export class MessagesService {
-  messages: Message[] = [{name: 'tin', text: 'tin'}];
+  // messages: Message[] = [{name: 'tin', text: 'tin'}];
+  constructor(
+    @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
+  ) {}
   clientToUser = {};
 
-  create(createMessageDto: CreateMessageDto, clientId: string) {
-    const message = {
+  async  create(createMessageDto: MessageDocument, clientId: string) {
+    const message = new this.messageModel( {
       name: this.clientToUser[clientId],
       text: createMessageDto.text
-    }
-    this.messages.push(message);
-    return message
+    });
+    // this.messages.push(message);
+    // return message
+
+    await message.save();
+    return message.toObject();
   }
 
   findAll() {
-    return this.messages;
+    // return this.messages;
+    return this.messageModel.find().exec();
   }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} message`;
-  // }
-
-  // update(id: number, updateMessageDto: UpdateMessageDto) {
-  //   return `This action updates a #${id} message`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} message`;
-  // }
 
   identify(name: string, clientID: string) {
     this.clientToUser[clientID] = name;
