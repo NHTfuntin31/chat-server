@@ -1,80 +1,64 @@
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-// Định nghĩa kiểu cho dữ liệu message
-interface Message {
-  name: string;
-  text: string;
-}
-
 const App = () => {
-  const socket = useRef<Socket | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messageText, setMessageText] = useState('');
+  const [joined, setJoined] = useState(false);
+  const [namez, setNamez] = useState('');
+  const [typingDisplay, setTypingDisplay] = useState('');
+  const Socket = io('http://localhost:3001');
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageText, setMessageText] = useState<string>('');
-  const [joined, setJoined] = useState<boolean>(false);
-  const [name, setName] = useState<string>('');
-  const [typingDisplay, setTypingDisplay] = useState<string>('');
+  let timeoutId: number | null = null;
 
   useEffect(() => {
-    const fetchMessages = () => {
-      if (socket.current) {
-        socket.current.emit('findAllMessages', {}, (response: Message[]) => {
-          setMessages(response);
-        });
-      }
-    };
+    Socket.emit('findAllMessages', {}, (response: any) => {
+      setMessages(response);
+    });
 
-    const handleNewMessage = (message: Message) => {
+    Socket.on('message', (message: any) => {
       setMessages((prevMessages) => [...prevMessages, message]);
-    };
+    });
 
-    const handleTyping = ({ name, isTyping }: { name: string; isTyping: boolean }) => {
+    Socket.on('typing', ({ name, isTyping }: { name: string; isTyping: boolean }) => {
       if (isTyping) {
         setTypingDisplay(`${name} is typing...`);
       } else {
         setTypingDisplay('');
       }
-    };
+    });
+  }, [namez]);
 
-    fetchMessages();
-
-    if (socket.current) {
-      socket.current.on('message', handleNewMessage);
-      socket.current.on('typing', handleTyping);
-    }
-
-    return () => {
-      if (socket.current) {
-        socket.current.off('message', handleNewMessage);
-        socket.current.off('typing', handleTyping);
-      }
-    };
-  }, []);
-
-  const sendMessage = () => {
-    if (socket.current) {
-      socket.current.emit('createMessage', { text: messageText }, (response: Message) => {
-        setMessageText('');
-      });
-    }
+  const sendMessage = (e: any) => {
+    e.preventDefault();
+    
+    Socket.emit('createMessage', {text: messageText}, (response: any) => {
+      // messages.value.push(response)
+      setMessageText('');
+      console.log(response);
+    })
   };
 
-  const join = () => {
-    if (socket.current) {
-      socket.current.emit('join', { name }, () => {
-        setJoined(true);
-      });
-    }
+  const join = (e: any) => {
+    e.preventDefault(namez);
+    console.log(namez);
+    
+    Socket.emit('join', {name: namez}, () => {
+      setJoined(true);
+    })
   };
-
-  let timeout: ReturnType<typeof setTimeout>;
 
   const emitTyping = () => {
-      socket.current?.emit('typing', { isTyping: true });
-      timeout = setTimeout(() => {
-        socket.current?.emit('typing', { isTyping: false });
+    if (Socket) {
+      Socket.emit('typing', { isTyping: true });
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+  
+      timeoutId = window.setTimeout(() => {
+        Socket.emit('typing', { isTyping: false });
       }, 2000);
+    }
   };
 
   return (
@@ -83,7 +67,7 @@ const App = () => {
         <div>
           <form onSubmit={join}>
             <label>What's your name?</label>
-            <input value={name} onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)} />
+            <input value={namez} onChange={(e) => setNamez(e.target.value)} />
             <button type="submit">Send</button>
           </form>
         </div>
@@ -101,13 +85,7 @@ const App = () => {
           <div className="message-input">
             <form onSubmit={sendMessage}>
               <label>Message:</label>
-              <input
-                value={messageText}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                  setMessageText(e.target.value);
-                  emitTyping();
-                }}
-              />
+              <input value={messageText} onChange={(e) => setMessageText(e.target.value)} onInput={emitTyping} />
               <button type="submit">Send</button>
             </form>
           </div>
