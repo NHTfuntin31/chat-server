@@ -24,9 +24,9 @@ export class MessagesService {
     return message.toObject();
   }
 
-  findAll() {
+  findAll(room: string) {
     // return this.messages;
-    return this.messageModel.find().exec();
+    return this.messageModel.find((message) => message.room === room).exec();
   }
 
   identify(name: string, clientID: string) {

@@ -24,8 +24,8 @@ export class MessagesGateway {
   }
 
   @SubscribeMessage('findAllMessages')
-  findAll() {
-    return this.messagesService.findAll();
+  findAll(@MessageBody('room') room: string) {
+    return this.messagesService.findAll(room);
   }
 
   @SubscribeMessage('join')
