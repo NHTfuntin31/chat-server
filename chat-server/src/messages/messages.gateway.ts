@@ -33,6 +33,12 @@ export class MessagesGateway {
     return this.messagesService.identify(name, client.id);
   }
 
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(client: any, room: string): void {
+    client.join(room);
+    this.server.to(room).emit('message', 'A new user has joined the room.');
+  }
+
   @SubscribeMessage('typing')
   async typing (@MessageBody('isTyping') isTyping: boolean,
   @ConnectedSocket() client: Socket) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
+import socket from './socket';
 
 const App = () => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -7,32 +7,36 @@ const App = () => {
   const [joined, setJoined] = useState(false);
   const [namez, setNamez] = useState('');
   const [typingDisplay, setTypingDisplay] = useState('');
-  const Socket = io('http://localhost:3001');
 
   let timeoutId: number | null = null;
 
   useEffect(() => {
-    Socket.emit('findAllMessages', {}, (response: any) => {
+    socket.emit('findAllMessages', {}, (response: any) => {
       setMessages(response);
     });
-
-    Socket.on('message', (message: any) => {
+    console.log("hahaa");
+    
+    socket.on('message', (message: any) => {
       setMessages((prevMessages) => [...prevMessages, message]);
+      console.log("kkk");
     });
-
-    Socket.on('typing', ({ name, isTyping }: { name: string; isTyping: boolean }) => {
+    socket.on('typing', ({ name, isTyping }: { name: string; isTyping: boolean }) => {
       if (isTyping) {
         setTypingDisplay(`${name} is typing...`);
       } else {
         setTypingDisplay('');
       }
     });
-  }, [namez]);
+    return () => {
+      socket.off('message');
+      socket.off('typing');
+    };
+  }, []);
 
   const sendMessage = (e: any) => {
     e.preventDefault();
     
-    Socket.emit('createMessage', {text: messageText}, (response: any) => {
+    socket.emit('createMessage', {text: messageText}, (response: any) => {
       // messages.value.push(response)
       setMessageText('');
       console.log(response);
@@ -43,20 +47,20 @@ const App = () => {
     e.preventDefault(namez);
     console.log(namez);
     
-    Socket.emit('join', {name: namez}, () => {
+    socket.emit('join', {name: namez}, () => {
       setJoined(true);
     })
   };
 
   const emitTyping = () => {
-    if (Socket) {
-      Socket.emit('typing', { isTyping: true });
+    if (socket) {
+      socket.emit('typing', { isTyping: true });
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
   
       timeoutId = window.setTimeout(() => {
-        Socket.emit('typing', { isTyping: false });
+        socket.emit('typing', { isTyping: false });
       }, 2000);
     }
   };
@@ -74,9 +78,9 @@ const App = () => {
       ) : (
         <div className="chat-container">
           <div className="messages-container">
-            {messages.map((message, index) => (
+            {messages.map((key, index) => (
               <div key={index}>
-                [{message.name}]: {message.text}
+                [{key.name}]: {key.text}
               </div>
             ))}
           </div>
