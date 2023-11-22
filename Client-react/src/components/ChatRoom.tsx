@@ -35,7 +35,6 @@ const ChatRoom = () => {
     return () => {
       socket.off('message');
       socket.off('typing');
-      socket.off('rooms');
     };
   }, [SelectedRoom]);
 
@@ -59,7 +58,8 @@ const ChatRoom = () => {
   };
 
   const exitRoom = () => {
-    setJoined(false)
+    setJoined(false);
+    socket.emit('leaveRoom');
   }
 
   const emitTyping = () => {

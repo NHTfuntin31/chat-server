@@ -17,7 +17,8 @@ export class MessagesGateway {
   @SubscribeMessage('createMessage')
   async create(@MessageBody() createMessageDto: MessageDocument, @ConnectedSocket() client: Socket) {
     const message = await this.messagesService.create(createMessageDto, client.id);
-    this.server.emit('message', message)
+    const room = await this.messagesService.getClientRoom(client.id)
+    this.server.to(room).emit('message', message)
 
     return message
   }
@@ -37,6 +38,12 @@ export class MessagesGateway {
     client.join(room);
     console.log('join room=', room);
     return this.messagesService.identify(name, client.id, room);
+  }
+
+  @SubscribeMessage('leaveRoom')
+  async leaveRoom(@ConnectedSocket() client: Socket) {
+    const room = await this.messagesService.getClientRoom(client.id)
+      client.leave(room);
   }
 
   // @SubscribeMessage('joinRoom')
