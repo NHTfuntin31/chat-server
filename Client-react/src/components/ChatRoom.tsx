@@ -58,6 +58,10 @@ const ChatRoom = () => {
     })
   };
 
+  const exitRoom = () => {
+    setJoined(false)
+  }
+
   const emitTyping = () => {
     if (socket) {
       socket.emit('typing', { isTyping: true });
@@ -99,6 +103,7 @@ const ChatRoom = () => {
         </div>
       ) : (
         <div className="chat-container">
+          <h2 style={{color:"green"}}>{SelectedRoom}</h2>
           <div className="messages-container">
             {messages.map((key, index) => (
               <div key={index}>
@@ -115,6 +120,7 @@ const ChatRoom = () => {
               <button type="submit">Send</button>
             </form>
           </div>
+          <button onClick={exitRoom}>Exit</button>
         </div>
       )}
     </div>

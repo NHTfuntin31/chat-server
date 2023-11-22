@@ -42,4 +42,7 @@ export class MessagesService {
   getClientName(clientId: string){
     return this.clientToUser[clientId]
   }
+  getClientRoom(clientId: string){
+    return this.chatRoom[clientId]
+  }
 }
