@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateMessageDto } from './dto/create-message.dto';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Message, MessageDocument } from './models/message.model';
@@ -11,27 +10,33 @@ export class MessagesService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
   ) {}
   clientToUser = {};
+  chatRoom = {};
 
   async  create(createMessageDto: MessageDocument, clientId: string) {
     const message = new this.messageModel( {
       name: this.clientToUser[clientId],
+      room: this.chatRoom[clientId],
       text: createMessageDto.text
     });
-    // this.messages.push(message);
-    // return message
 
     await message.save();
     return message.toObject();
   }
 
-  findAll(room: string) {
+  async findAll(room: string) {
     // return this.messages;
-    return this.messageModel.find((message) => message.room === room).exec();
+    console.log(room);
+    
+    const data = await this.messageModel.find({ room: room }).exec()
+    console.log("day la data" + data);
+    
+    return data;
   }
 
-  identify(name: string, clientID: string) {
+  identify(name: string, clientID: string, inRoom: string) {
     this.clientToUser[clientID] = name;
-    return Object.values(this.clientToUser)
+    this.chatRoom[clientID] = inRoom;
+    return Object.values([this.clientToUser, this.chatRoom[clientID]])
   }
 
   getClientName(clientId: string){

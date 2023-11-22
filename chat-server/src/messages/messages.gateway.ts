@@ -17,7 +17,6 @@ export class MessagesGateway {
   @SubscribeMessage('createMessage')
   async create(@MessageBody() createMessageDto: MessageDocument, @ConnectedSocket() client: Socket) {
     const message = await this.messagesService.create(createMessageDto, client.id);
-
     this.server.emit('message', message)
 
     return message
@@ -25,19 +24,26 @@ export class MessagesGateway {
 
   @SubscribeMessage('findAllMessages')
   findAll(@MessageBody('room') room: string) {
+    console.log("dang tim kiem" + room);
+    
     return this.messagesService.findAll(room);
   }
 
   @SubscribeMessage('join')
-  joinRoom (@MessageBody('name') name: string, @ConnectedSocket() client: Socket) {
-    return this.messagesService.identify(name, client.id);
+  joinRoom (
+    @MessageBody('name') name: string, 
+    @MessageBody('room') room: string,
+    @ConnectedSocket() client: Socket) {
+    client.join(room);
+    console.log('join room=', room);
+    return this.messagesService.identify(name, client.id, room);
   }
 
-  @SubscribeMessage('joinRoom')
-  handleJoinRoom(client: any, room: string): void {
-    client.join(room);
-    this.server.to(room).emit('message', 'A new user has joined the room.');
-  }
+  // @SubscribeMessage('joinRoom')
+  // handleJoinRoom(client: any, room: string): void {
+  //   client.join(room);
+  //   this.server.to(room).emit('message', 'A new user has joined the room.');
+  // }
 
   @SubscribeMessage('typing')
   async typing (@MessageBody('isTyping') isTyping: boolean,
@@ -45,5 +51,10 @@ export class MessagesGateway {
     const name = await this.messagesService.getClientName(client.id);
 
     client.broadcast.emit('typing', {name, isTyping});
+  }
+
+  @SubscribeMessage('rooms')
+  rooms() {
+    return ['room-1', 'room-2', 'room-3'];
   }
 }
